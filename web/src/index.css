@@ -1,0 +1,571 @@
+@import 'tailwindcss';
+/* `fonts.css` must come BEFORE `globals.css`: as of @nous-research/ui 0.14.x,
+   `globals.css` only declares the `--font-*` CSS variables (Collapse, Rules
+   Compressed/Expanded, Mondwest). The `@font-face` registrations live in
+   `fonts.css`, so without this import the DS variables resolve to font
+   families the browser never loads and components fall back to a system
+   stack (Tabs, Segmented, Typography, Buttons, etc. all look unstyled). */
+@import '@nous-research/ui/styles/fonts.css';
+@import '@nous-research/ui/styles/globals.css';
+
+/* Scan the published design-system bundle so its utility classes survive
+   Tailwind's JIT purge. */
+@source '../node_modules/@nous-research/ui/dist';
+
+/* ------------------------------------------------------------------ */
+/* JetBrains Mono — bundled for the embedded TUI (/chat tab).          */
+/* Gives the terminal a proper monospace font even on systems where    */
+/* the user doesn't have one installed locally; xterm.js picks it up   */
+/* via ChatPage's `fontFamily` option.                                 */
+/* Apache-2.0.                                                         */
+/* ------------------------------------------------------------------ */
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts-terminal/JetBrainsMono-Regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts-terminal/JetBrainsMono-Bold.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts-terminal/JetBrainsMono-Italic.woff2') format('woff2');
+}
+
+/* ------------------------------------------------------------------ */
+/* Hermes Agent — paper / publication theme.                          */
+/*                                                                    */
+/* Design intent: editorial. White-ish canvas (#fafaf9 warm white),    */
+/* sharp 1px rules (#e7e5e0), no drop shadows, no glassmorphism, no   */
+/* glow, no gradient. Accent is a single restrained color — deep       */
+/* burnt amber (#b45309) — for action affordance and active state.     */
+/*                                                                    */
+/* The previous LENS_0 / Hermes teal dark theme is still loadable via  */
+/* `themes/presets.ts`; this :root block just changes the *defaults*   */
+/* so a fresh install lands on the paper look without ceremony.        */
+/* ------------------------------------------------------------------ */
+
+:root {
+  /* Canvas — warm off-white, slightly toward paper than pure #fff. */
+  --foreground: #1a1a1a;
+  --foreground-base: #1a1a1a;
+  --foreground-alpha: 1;
+
+  /* Foreground tones (formerly "midground") — used for body text and
+     borders. In paper mode these are just greys, not cream-on-teal. */
+  --midground: #1a1a1a;
+  --midground-base: #1a1a1a;
+  --midground-alpha: 1;
+
+  /* Paper canvas */
+  --background: #fafaf9;
+  --background-base: #fafaf9;
+  --background-alpha: 1;
+
+  /* Consumed by <Backdrop /> — paper mode ignores them. */
+  --warm-glow: transparent;
+  --noise-opacity-mul: 0;
+
+  /* Typography — same system stack as before, including the CJK
+     fallbacks.  No decorative display face; the UI leans on weight
+     (400/500/600) and tracking for hierarchy instead. */
+  --theme-font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --theme-font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo,
+    Consolas, "JetBrains Mono", monospace;
+  --theme-font-display: var(--theme-font-sans);
+  --theme-base-size: 15px;
+  --theme-line-height: 1.55;
+  --theme-letter-spacing: 0;
+
+  /* Per-user font scale (0.9 / 1.0 / 1.1 / 1.2).  The settings panel
+     writes this to <html style="--hermes-font-scale: ..."> at runtime. */
+  --hermes-font-scale: 1.1;
+
+  /* Layout tokens — sharp corners; the publication look relies on
+     hairline borders, not rounded cards.  --hermes-radius-scale is a
+     runtime multiplier (0/1/2) the user can flip in the General
+     settings panel without touching the theme. */
+  --radius: 0.25rem;
+  --theme-radius: 0.25rem;
+  --theme-spacing-mul: 1;
+  --theme-density: comfortable;
+
+  /* Runtime user preferences.  The settings panel writes these onto
+     <html style="..."> at runtime.  The defaults below match what the
+     panel renders when nothing has been saved.  See
+     GeneralSettingsSection in pages/SystemPage.tsx for the writer side. */
+  --hermes-radius-scale: 0;
+  --hermes-content-max: 72rem;       /* content area max width */
+  --hermes-sidebar-width: 16rem;     /* sidebar width when expanded */
+  --hermes-sidebar-collapsed: 3.5rem;
+  --hermes-auto-fit: 0;              /* 1 = clamp() responsive base size */
+
+  /* Mono / code size — independent of the body font-scale.  Body text
+     can be 1.1× while code stays at 1.0×, or vice versa; long code
+     reads better at the same size as body or slightly larger, but the
+     old 0.875rem default was too small.  Default 1.1 = 10% larger than
+     the parent's em. */
+  --hermes-mono-scale: 1.1;
+
+  /* Data-series accents — readable on paper without screaming. */
+  --series-input-token: #b45309;
+  --series-output-token: #1f6f4a;
+}
+
+/* Theme tokens cascade into the document root so every descendant inherits
+   the font stack, base size, and letter spacing without explicit calls.
+   The font-size formula has two modes:
+
+     --hermes-auto-fit: 0  (default, fixed)
+       `base * font-scale` — the user picks a precise step in the
+       General settings panel and the rest of the page reads at that
+       single size no matter the window.
+
+     --hermes-auto-fit: 1  (window-adaptive, opt-in)
+       `clamp(min, vw-driven, max)` — the base size flexes with the
+       viewport so a smaller window shrinks text just enough to keep
+       content readable and a larger one grows it.  --hermes-font-scale
+       is still layered on top as a per-user nudge.
+
+   The settings panel's "Auto-fit window" toggle flips the multiplier. */
+html {
+  font-family: var(--theme-font-sans);
+  font-size: calc(
+    (
+      var(--theme-base-size) +
+      (var(--hermes-auto-fit, 0) * 0.35 * (100vw - 30rem))
+    ) * var(--hermes-font-scale, 1)
+  );
+  line-height: var(--theme-line-height);
+  letter-spacing: var(--theme-letter-spacing);
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+  color: var(--foreground);
+  background: var(--background);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Cap the auto-fit growth so a 4K monitor doesn't render paragraphs at
+   24px+.  Above ~90rem viewport width the size stops climbing. */
+@media (min-width: 90rem) {
+  html {
+    font-size: calc(
+      var(--theme-base-size) * var(--hermes-font-scale, 1) +
+      (var(--hermes-auto-fit, 0) * 0.18rem)
+    );
+  }
+}
+
+/* Floor it on small phones so 320px viewports don't get 9px text. */
+@media (max-width: 30rem) {
+  html {
+    font-size: calc(
+      max(
+        0.875rem,
+        var(--theme-base-size) * var(--hermes-font-scale, 1) -
+          (var(--hermes-auto-fit, 0) * 0.0625rem)
+      )
+    );
+  }
+}
+
+body {
+  font-family: var(--theme-font-sans);
+  min-height: 0;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+code, kbd, pre, samp, .font-mono, .font-mono-ui {
+  font-family: var(--theme-font-mono);
+}
+
+/* ------------------------------------------------------------------ */
+/* Code & mono typography.                                            */
+/*                                                                    */
+/* `code` and friends used to ship at `0.875rem` — fine for inline    */
+/* monospace tokens, too small for the multi-line code blocks the     */
+/* dashboard renders (Tools, ToolCall, ConfigPage diffs, etc.).  We   */
+/* now use `calc(1em * var(--hermes-mono-scale))` so a user who picks */
+/* a separate Mono size in the General settings panel gets code       */
+/* that's actually readable.                                          */
+/*                                                                    */
+/* IMPORTANT: we only apply font-size to `code` / `kbd` / `samp` /    */
+/* `pre` *elements*.  The `.font-mono` / `.font-mono-ui` utility      */
+/* classes are deliberately left alone — they inherit the parent's    */
+/* font-size so Tailwind's `text-xs` / `text-sm` / etc. still work.   */
+/* ------------------------------------------------------------------ */
+code, kbd, samp {
+  font-size: calc(1em * var(--hermes-mono-scale, 1.1));
+}
+pre,
+pre code,
+pre kbd,
+pre samp {
+  font-size: calc(1em * var(--hermes-mono-scale, 1.1));
+  line-height: 1.55;
+  tab-size: 2;
+}
+
+/* Tighter padding on inline <code> tokens so they don't punch a
+   visually loud hole in running text.  Block <pre> keeps the DS
+   defaults. */
+:not(pre) > code {
+  padding: 0.05em 0.35em;
+  border-radius: 0.2rem;
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+}
+
+/* Original `small` bump from the upstream Hermes dashboard.  In the
+   LENS_0 (dark teal) theme the dashboard canvas was 15px and the
+   browser's default `small` (13px) was hard to read, so the team
+   bumped it to 1.0625rem.  We keep this for the paper theme too —
+   fine print should still be readable. */
+small { font-size: 1.0625rem; }
+
+/* Density: scale the shadcn spacing utilities via a multiplier. The DS
+   components use `p-N` / `gap-N` / `space-*` classes which resolve against
+   Tailwind's spacing scale; multiplying `--spacing` at :root scales them
+   all proportionally in Tailwind v4. */
+@theme inline {
+  --spacing: calc(0.25rem * var(--theme-spacing-mul, 1));
+  --font-sans: var(--theme-font-sans);
+  --font-mono: var(--theme-font-mono);
+}
+
+#root {
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  html,
+  body,
+  #root {
+    min-height: 100dvh;
+    height: auto;
+    max-height: none;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Shadcn-compat tokens — paper theme.                                */
+/*                                                                    */
+/* The dashboard predates the Nous DS in places and uses shadcn-style  */
+/* classes (bg-card, text-muted-foreground, border-border, etc.) — we  */
+/* remap them onto the paper palette so legacy call sites still work.  */
+/*                                                                    */
+/* Most values are derived from `--foreground` / `--midground` /       */
+/* `--background` so that the ThemeProvider can still rewrite them     */
+/* when the user switches to a different preset.  The primary accent   */
+/* (#b45309 amber) is the one intentional deviation from the           */
+/* theme-variable system — it's the paper theme's signature.          */
+/* ------------------------------------------------------------------ */
+@theme inline {
+  --color-foreground: var(--midground);
+
+  --color-card: color-mix(in srgb, var(--midground-base) 2%, var(--background-base));
+  --color-card-foreground: var(--midground);
+
+  --color-primary: #b45309;
+  --color-primary-foreground: #ffffff;
+
+  --color-secondary: color-mix(in srgb, var(--midground-base) 4%, var(--background-base));
+  --color-secondary-foreground: var(--midground);
+
+  --color-muted: color-mix(in srgb, var(--midground-base) 4%, var(--background-base));
+  --color-muted-foreground: var(--color-text-secondary);
+
+  --color-accent: color-mix(in srgb, var(--midground-base) 4%, var(--background-base));
+  --color-accent-foreground: var(--midground);
+
+  --color-destructive: #b91c1c;
+  --color-destructive-foreground: #ffffff;
+
+  --color-success: #1f6f4a;
+  --color-warning: #b45309;
+
+  --color-border: color-mix(in srgb, var(--midground-base) 12%, transparent);
+  --color-input: color-mix(in srgb, var(--midground-base) 12%, transparent);
+  --color-ring: #b45309;
+
+  --color-popover: color-mix(in srgb, var(--midground-base) 2%, var(--background-base));
+  --color-popover-foreground: var(--midground);
+
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+  --radius-xl: 8px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Paper-theme overrides for elements that previously leaned on the   */
+/* LENS_0 backdrop's blend modes. Stripped of:                         */
+/*  - backdrop-blur / bg-opacity shenanigans                           */
+/*  - mix-blend-mode on the chrome (only the sidebar's selected-pill   */
+/*    indicator still uses it, sparingly)                             */
+/*  - clip-path polygons ("cut corners") on the sidebar / header       */
+/*  - hairline image fills on brand wordmarks                          */
+/* ------------------------------------------------------------------ */
+
+/* Override the brand wordmark — keep "Hermes / Agent" in a clean serif
+   italic look that reads editorial. */
+.paper-brand {
+  font-family: ui-serif, "Iowan Old Style", "Apple Garamond", "Times New Roman",
+    "Songti SC", "Source Han Serif SC", serif;
+  font-style: italic;
+  font-weight: 500;
+  letter-spacing: 0.005em;
+  line-height: 1;
+}
+
+/* Sidebar nav active state — the previous design used a 1px-wide
+   glowing vertical line; paper mode uses a left bar of solid amber. */
+.paper-nav-active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.35rem;
+  bottom: 0.35rem;
+  width: 2px;
+  background: #b45309;
+}
+
+/* Smallcaps / metadata row used in card headers — paper style. */
+.paper-eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b6b6b;
+}
+
+/* ------------------------------------------------------------------ */
+/* Runtime layout utilities.                                          */
+/*                                                                    */
+/* The General settings panel writes four CSS custom properties to    */
+/* <html> at runtime:                                                 */
+/*                                                                    */
+/*   --hermes-radius-scale       0 | 1 | 2   (0 / 4px / 8px)          */
+/*   --hermes-spacing-mul        0.85 | 1 | 1.15  (compact/std/comfy) */
+/*   --hermes-content-max        60 | 72 | 84 | 96 rem  (page width)   */
+/*   --hermes-sidebar-width      14 | 16 | 18 rem                     */
+/*   --hermes-auto-fit           0 | 1 (fixed vs viewport responsive) */
+/*                                                                    */
+/* Each multiplier is then translated into a concrete token here so   */
+/* the rest of the stylesheet (and the shadcn-style components) keep  */
+/* reading from the same names.  Multipliers are unitless, sizes     */
+/* are rems — chosen so the values stay scaled with the user's font.  */
+/* ------------------------------------------------------------------ */
+
+:root {
+  --hermes-radius: calc(var(--hermes-radius-scale, 0) * 0.25rem);
+}
+
+/* The runtime radius scale only affects the few shadcn-style containers
+   the user actually notices (Card, Input, Button, Badge, Tabs) — the
+   avatar circles, status pills and tooltips keep their hard-coded
+   values.  Tying the variables directly to Tailwind's utility classes
+   would also rewrite `.rounded-full`, which we don't want. */
+[data-hermes-radius] [data-slot="card"],
+[data-hermes-radius] [data-slot="card"] > * {
+  border-radius: var(--hermes-radius) !important;
+}
+[data-hermes-radius] [data-slot="input"],
+[data-hermes-radius] [data-slot="select-trigger"],
+[data-hermes-radius] [data-slot="textarea"],
+[data-hermes-radius] [data-slot="button"]:not(.rounded-full) {
+  border-radius: var(--hermes-radius) !important;
+}
+[data-hermes-radius] [data-slot="badge"]:not(.rounded-full) {
+  border-radius: var(--hermes-radius) !important;
+}
+[data-hermes-radius] [data-slot="tabs-list"] {
+  border-radius: var(--hermes-radius) !important;
+}
+
+/* Sidebar widths and the content max width are runtime variables; the
+   Tailwind utility classes are static, so we wire the dynamic values
+   in here.  App.tsx uses inline `style={{ "--hermes-sidebar-w": ... }}`
+   for the sidebar width — the helpers below are a fallback for any
+   other place that just wants to read the values. */
+aside[data-hermes-sidebar] {
+  width: var(--hermes-sidebar-width, 16rem);
+}
+aside[data-hermes-sidebar][data-collapsed="true"] {
+  width: var(--hermes-sidebar-collapsed, 3.5rem);
+}
+
+main[data-hermes-main] {
+  max-width: 100vw;
+}
+main[data-hermes-main] > .hermes-content-frame {
+  max-width: var(--hermes-content-max, 72rem);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ------------------------------------------------------------------ */
+/* Auto-fit helpers — components that *need* to react to viewport     */
+/* changes (long ID columns, multi-token tables) can opt in by adding  */
+/* the `hermes-fit` class.  Below the breakpoint they collapse into   */
+/* stacked rows; above it they get a horizontal scrollable strip.    */
+/* ------------------------------------------------------------------ */
+.hermes-fit {
+  container-type: inline-size;
+  container-name: hermes-fit;
+}
+
+@container hermes-fit (max-width: 32rem) {
+  .hermes-fit-row {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 0.5rem !important;
+  }
+  .hermes-fit-row > .hermes-fit-cell {
+    width: 100% !important;
+  }
+}
+
+/* Long content — paths, IDs, JSON, secrets — should never blow out
+   its column.  Apply the class anywhere a long string would otherwise
+   force horizontal overflow. */
+.hermes-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.hermes-break {
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+/* Sidebar nav link inherits the amber 2px left bar from the
+   `.paper-nav-active` class in App.tsx.  Here we make sure the
+   indicator is visible even when the sidebar is collapsed. */
+aside[data-collapsed="true"] .paper-nav-active::before {
+  top: 0.5rem;
+  bottom: 0.5rem;
+}
+
+/* Toast animations. */
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes toast-out {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(8px); }
+}
+
+/* Generic fade + dialog entrance used by popovers and confirm dialogs. */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes dialog-in {
+  from { opacity: 0; transform: translateY(4px) scale(0.99); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Sidebar tooltip entrance — shortened and slowed for the calmer
+   paper feel (no "warm-ref" trick; the tooltip just appears). */
+@keyframes sidebar-tooltip-in {
+  from { opacity: 0; transform: translateY(-50%) translateX(-2px); }
+  to   { opacity: 1; transform: translateY(-50%) translateX(0); }
+}
+
+/* Hide scrollbar utility — used by the header's overflow-x nav row. */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Plus-lighter blend — kept available for any pre-existing caller, but
+   in the paper theme it has no visible effect. */
+.blend-lighter {
+  mix-blend-mode: plus-lighter;
+}
+
+/* Mono stack for dense data readouts. */
+.font-mono-ui {
+  font-family: var(--theme-font-mono);
+}
+
+/* Subtle grain overlay for badges. */
+.grain {
+  position: relative;
+}
+.grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.12;
+  pointer-events: none;
+  background: repeating-conic-gradient(currentColor 0% 25%, #0000 0% 50%) 0 0 /
+    2px 2px;
+}
+
+/* When a theme provides `assets.bg`, the backdrop's <div> renders it as
+   a CSS background; the default filler <img> is hidden to prevent
+   double-compositing. In paper mode there's no filler image at all, but
+   the :not() / [style*=] selector pair is harmless and preserved for
+   compatibility with any preset that opts back into a custom asset. */
+:root:not([style*="--theme-asset-bg:"]) .theme-default-filler {
+  display: block;
+}
+:root[style*="--theme-asset-bg:"] .theme-default-filler {
+  display: none;
+}
+
+/* ------------------------------------------------------------------ */
+/* Selection — paper-style highlight ring instead of OS-default blue.  */
+/* ------------------------------------------------------------------ */
+::selection {
+  background: #fde68a;
+  color: #1a1a1a;
+}
+
+/* Scrollbars — paper-thin, dark grey. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #c9c7c1 transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: #c9c7c1;
+  border-radius: 0;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: #a8a6a0;
+}
