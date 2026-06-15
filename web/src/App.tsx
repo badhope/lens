@@ -559,13 +559,19 @@ export default function App() {
               >
                 <PluginSlot name="header-left" />
 
-                <Typography
-                  className="paper-brand text-[1.1rem] text-foreground"
-                >
-                  Hermes
-                  <br />
-                  Agent
-                </Typography>
+                <div className="flex flex-col leading-none">
+                  <Typography
+                    className="paper-brand text-[1.05rem] text-foreground"
+                  >
+                    Hermes
+                  </Typography>
+                  <span
+                    aria-hidden
+                    className="paper-eyebrow mt-0.5 text-[0.5625rem] tracking-[0.18em] text-muted-foreground"
+                  >
+                    Agent
+                  </span>
+                </div>
               </div>
 
               <Button

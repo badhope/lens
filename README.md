@@ -6,9 +6,12 @@
 
 > A self-improving AI agent with a learning loop, multi-platform messaging gateway, and a paper-themed web dashboard.
 
+> **Maintained by [badhope](https://github.com/badhope)** — originally created by the [Nous Research](https://github.com/NousResearch) team as [hermes-agent](https://github.com/NousResearch/hermes-agent). This fork preserves the original architecture while shipping a new paper-themed dashboard, multilingual UI, and a friendlier runtime layout system.
+
 <p align="center">
   <a href="https://github.com/badhope/HermesAgent/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
   <a href="README.zh-CN.md"><img src="https://img.shields.io/badge/%E4%B8%AD%E6%96%87-README-red?style=for-the-badge" alt="Chinese README"></a>
+  <a href="https://github.com/badhope/HermesAgent/issues"><img src="https://img.shields.io/badge/Maintainer-badhope-7c2d12?style=for-the-badge" alt="Maintained by badhope"></a>
 </p>
 
 ---
@@ -42,13 +45,13 @@ It's not tied to your laptop. Talk to it from Telegram, Discord, Slack, WhatsApp
 ### Linux / macOS / WSL2 / Termux
 
 ```bash
-curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/badhope/HermesAgent/main/scripts/install.sh | bash
 ```
 
 ### Windows (PowerShell)
 
 ```powershell
-iex (irm https://hermes-agent.nousresearch.com/install.ps1)
+iex (irm https://raw.githubusercontent.com/badhope/HermesAgent/main/scripts/install.ps1)
 ```
 
 After installation:

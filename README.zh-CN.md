@@ -4,16 +4,16 @@
 
 # Hermes Agent ☤
 
+> **由 [badhope](https://github.com/badhope) 维护。** 本项目源自 [Nous Research](https://github.com/NousResearch) 团队构建的 [hermes-agent](https://github.com/NousResearch/hermes-agent)——本仓库在保留其完整学习闭环、消息网关与多平台能力的同时，提供了全新的纸张主题仪表盘、16 语种 UI，以及更细致的运行时布局系统。
+
 <p align="center">
-  <a href="https://hermes-agent.nousresearch.com/docs/"><img src="https://img.shields.io/badge/Docs-hermes--agent.nousresearch.com-FFD700?style=for-the-badge" alt="Documentation"></a>
-  <a href="https://discord.gg/NousResearch"><img src="https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord"></a>
-  <a href="https://github.com/NousResearch/hermes-agent/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
-  <a href="https://nousresearch.com"><img src="https://img.shields.io/badge/Built%20by-Nous%20Research-blueviolet?style=for-the-badge" alt="Built by Nous Research"></a>
+  <a href="https://github.com/badhope/HermesAgent/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
   <a href="README.md"><img src="https://img.shields.io/badge/Lang-English-lightgrey?style=for-the-badge" alt="English"></a>
-  <a href="README.ur-pk.md"><img src="https://img.shields.io/badge/Lang-اردو-green?style=for-the-badge" alt="اردو"></a>
+  <a href="https://github.com/badhope/HermesAgent/issues"><img src="https://img.shields.io/badge/Maintainer-badhope-7c2d12?style=for-the-badge" alt="Maintained by badhope"></a>
+  <a href="https://github.com/NousResearch/hermes-agent"><img src="https://img.shields.io/badge/Upstream-Nous%20Research-blueviolet?style=for-the-badge" alt="Upstream: Nous Research"></a>
 </p>
 
-**由 [Nous Research](https://nousresearch.com) 构建的自进化 AI 代理。** 它是唯一内置学习闭环的智能代理——从经验中创建技能，在使用中改进技能，主动持久化知识，搜索过往对话，并在跨会话中逐步构建对你的深度理解。可以在 $5 的 VPS 上运行，也可以在 GPU 集群上运行，或者使用几乎零成本的 Serverless 基础设施。它不绑定你的笔记本——你可以在 Telegram 上与它对话，而它在云端 VM 上工作。
+**由 [badhope](https://github.com/badhope) 维护的自进化 AI 代理。** 它是唯一内置学习闭环的智能代理——从经验中创建技能，在使用中改进技能，主动持久化知识，搜索过往对话，并在跨会话中逐步构建对你的深度理解。可以在 $5 的 VPS 上运行，也可以在 GPU 集群上运行，或者使用几乎零成本的 Serverless 基础设施。它不绑定你的笔记本——你可以在 Telegram 上与它对话，而它在云端 VM 上工作。
 
 支持任意模型——[Nous Portal](https://portal.nousresearch.com)、[OpenRouter](https://openrouter.ai)（200+ 模型）、[NVIDIA NIM](https://build.nvidia.com)（Nemotron）、[小米 MiMo](https://platform.xiaomimimo.com)、[z.ai/GLM](https://z.ai)、[Kimi/Moonshot](https://platform.moonshot.ai)、[MiniMax](https://www.minimax.io)、[Hugging Face](https://huggingface.co)、OpenAI，或自定义端点。使用 `hermes model` 即可切换——无需改代码，无锁定。
 
@@ -32,12 +32,12 @@
 ## 快速安装
 
 ```bash
-curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/badhope/HermesAgent/main/scripts/install.sh | bash
 ```
 
 支持 Linux、macOS、WSL2 和 Android (Termux)。安装程序会自动处理平台特定的配置。
 
-> **Android / Termux：** 已测试的手动安装路径请参考 [Termux 指南](https://hermes-agent.nousresearch.com/docs/getting-started/termux)。在 Termux 上，Hermes 会安装精选的 `.[termux]` 扩展，因为完整的 `.[all]` 扩展会拉取 Android 不兼容的语音依赖。
+> **Android / Termux：** 已测试的手动安装路径请参考 [Termux 指南](https://github.com/badhope/HermesAgent/blob/main/website/docs/getting-started/termux.md)。在 Termux 上，Hermes 会安装精选的 `.[termux]` 扩展，因为完整的 `.[all]` 扩展会拉取 Android 不兼容的语音依赖。
 >
 > **Windows：** 原生 Windows 不受支持。请安装 [WSL2](https://learn.microsoft.com/zh-cn/windows/wsl/install) 并运行上述命令。
 
@@ -64,7 +64,7 @@ hermes update       # 更新到最新版本
 hermes doctor       # 诊断问题
 ```
 
-📖 **[完整文档 →](https://hermes-agent.nousresearch.com/docs/)**
+📖 **[完整文档 →](https://github.com/badhope/HermesAgent/tree/main/website/docs)**
 
 ---
 
@@ -81,7 +81,7 @@ Hermes 始终允许你使用任意服务商，这点不会改变。但如果你�
 hermes setup --portal
 ```
 
-它会通过 OAuth 登录、把 Nous 设为推理服务商，并启用 Tool Gateway。随时用 `hermes portal info` 查看路由状态。完整说明见 [Tool Gateway 文档](https://hermes-agent.nousresearch.com/docs/user-guide/features/tool-gateway)。
+它会通过 OAuth 登录、把 Nous 设为推理服务商，并启用 Tool Gateway。随时用 `hermes portal info` 查看路由状态。完整说明见 [Tool Gateway 文档](https://github.com/badhope/HermesAgent/blob/main/website/docs/user-guide/features/tool-gateway.md)。
 
 你随时可以按工具单独切回自己的 API Key — Gateway 是按工具粒度生效的，不是一刀切。
 
@@ -103,31 +103,31 @@ Hermes 有两种入口：用 `hermes` 启动终端 UI，或运行网关从 Teleg
 | 中断当前工作 | `Ctrl+C` 或发送新消息 | `/stop` 或发送新消息 |
 | 平台特定状态 | `/platforms` | `/status`、`/sethome` |
 
-完整命令列表请参阅 [CLI 指南](https://hermes-agent.nousresearch.com/docs/user-guide/cli) 和 [消息网关指南](https://hermes-agent.nousresearch.com/docs/user-guide/messaging)。
+完整命令列表请参阅 [CLI 指南](https://github.com/badhope/HermesAgent/blob/main/website/docs/user-guide/cli.md) 和 [消息网关指南](https://github.com/badhope/HermesAgent/blob/main/website/docs/user-guide/messaging.md)。
 
 ---
 
 ## 文档
 
-所有文档位于 **[hermes-agent.nousresearch.com/docs](https://hermes-agent.nousresearch.com/docs/)**：
+所有文档位于 **[badhope/HermesAgent/tree/main/website/docs](https://github.com/badhope/HermesAgent/tree/main/website/docs)**：
 
 | 章节 | 内容 |
 |------|------|
-| [快速开始](https://hermes-agent.nousresearch.com/docs/getting-started/quickstart) | 安装 → 设置 → 2 分钟内开始首次对话 |
-| [CLI 使用](https://hermes-agent.nousresearch.com/docs/user-guide/cli) | 命令、快捷键、人格、会话 |
-| [配置](https://hermes-agent.nousresearch.com/docs/user-guide/configuration) | 配置文件、提供商、模型、所有选项 |
-| [消息网关](https://hermes-agent.nousresearch.com/docs/user-guide/messaging) | Telegram、Discord、Slack、WhatsApp、Signal、Home Assistant |
-| [安全](https://hermes-agent.nousresearch.com/docs/user-guide/security) | 命令审批、DM 配对、容器隔离 |
-| [工具与工具集](https://hermes-agent.nousresearch.com/docs/user-guide/features/tools) | 40+ 工具、工具集系统、终端后端 |
-| [技能系统](https://hermes-agent.nousresearch.com/docs/user-guide/features/skills) | 过程记忆、技能中心、创建技能 |
-| [记忆](https://hermes-agent.nousresearch.com/docs/user-guide/features/memory) | 持久记忆、用户画像、最佳实践 |
-| [MCP 集成](https://hermes-agent.nousresearch.com/docs/user-guide/features/mcp) | 连接任意 MCP 服务器扩展能力 |
-| [定时调度](https://hermes-agent.nousresearch.com/docs/user-guide/features/cron) | 定时任务与平台投递 |
-| [上下文文件](https://hermes-agent.nousresearch.com/docs/user-guide/features/context-files) | 影响每次对话的项目上下文 |
-| [架构](https://hermes-agent.nousresearch.com/docs/developer-guide/architecture) | 项目结构、代理循环、关键类 |
-| [贡献](https://hermes-agent.nousresearch.com/docs/developer-guide/contributing) | 开发设置、PR 流程、代码风格 |
-| [CLI 参考](https://hermes-agent.nousresearch.com/docs/reference/cli-commands) | 所有命令和标志 |
-| [环境变量](https://hermes-agent.nousresearch.com/docs/reference/environment-variables) | 完整环境变量参考 |
+| [快速开始](https://github.com/badhope/HermesAgent/blob/main/website/docs/getting-started/quickstart.md) | 安装 → 设置 → 2 分钟内开始首次对话 |
+| [CLI 使用](https://github.com/badhope/HermesAgent/blob/main/website/docs/user-guide/cli.md) | 命令、快捷键、人格、会话 |
+| [配置](https://github.com/badhope/HermesAgent/blob/main/website/docs/user-guide/configuration.md) | 配置文件、提供商、模型、所有选项 |
+| [消息网关](https://github.com/badhope/HermesAgent/blob/main/website/docs/user-guide/messaging.md) | Telegram、Discord、Slack、WhatsApp、Signal、Home Assistant |
+| [安全](https://github.com/badhope/HermesAgent/blob/main/website/docs/user-guide/security.md) | 命令审批、DM 配对、容器隔离 |
+| [工具与工具集](https://github.com/badhope/HermesAgent/blob/main/website/docs/user-guide/features/tools.md) | 40+ 工具、工具集系统、终端后端 |
+| [技能系统](https://github.com/badhope/HermesAgent/blob/main/website/docs/user-guide/features/skills.md) | 过程记忆、技能中心、创建技能 |
+| [记忆](https://github.com/badhope/HermesAgent/blob/main/website/docs/user-guide/features/memory.md) | 持久记忆、用户画像、最佳实践 |
+| [MCP 集成](https://github.com/badhope/HermesAgent/blob/main/website/docs/user-guide/features/mcp.md) | 连接任意 MCP 服务器扩展能力 |
+| [定时调度](https://github.com/badhope/HermesAgent/blob/main/website/docs/user-guide/features/cron.md) | 定时任务与平台投递 |
+| [上下文文件](https://github.com/badhope/HermesAgent/blob/main/website/docs/user-guide/features/context-files.md) | 影响每次对话的项目上下文 |
+| [架构](https://github.com/badhope/HermesAgent/blob/main/website/docs/developer-guide/architecture.md) | 项目结构、代理循环、关键类 |
+| [贡献](https://github.com/badhope/HermesAgent/blob/main/website/docs/developer-guide/contributing.md) | 开发设置、PR 流程、代码风格 |
+| [CLI 参考](https://github.com/badhope/HermesAgent/blob/main/website/docs/reference/cli-commands.md) | 所有命令和标志 |
+| [环境变量](https://github.com/badhope/HermesAgent/blob/main/website/docs/reference/environment-variables.md) | 完整环境变量参考 |
 
 ---
 
@@ -162,13 +162,13 @@ hermes claw migrate --overwrite  # 覆盖已有冲突
 
 ## 贡献
 
-欢迎贡献！请参阅 [贡献指南](https://hermes-agent.nousresearch.com/docs/developer-guide/contributing) 了解开发设置、代码风格和 PR 流程。
+欢迎贡献！请参阅 [贡献指南](https://github.com/badhope/HermesAgent/blob/main/website/docs/developer-guide/contributing.md) 了解开发设置、代码风格和 PR 流程。
 
 贡献者快速开始——克隆并使用 `setup-hermes.sh`：
 
 ```bash
-git clone https://github.com/NousResearch/hermes-agent.git
-cd hermes-agent
+git clone https://github.com/badhope/HermesAgent.git
+cd HermesAgent
 ./setup-hermes.sh     # 安装 uv、创建 venv、安装 .[all]、创建符号链接 ~/.local/bin/hermes
 ./hermes              # 自动检测 venv，无需先 source
 ```
@@ -187,10 +187,9 @@ python -m pytest tests/ -q
 
 ## 社区
 
-- 💬 [Discord](https://discord.gg/NousResearch)
 - 📚 [技能中心](https://agentskills.io)
-- 🐛 [问题反馈](https://github.com/NousResearch/hermes-agent/issues)
-- 💡 [讨论区](https://github.com/NousResearch/hermes-agent/discussions)
+- 🐛 [问题反馈](https://github.com/badhope/HermesAgent/issues)
+- 💡 [讨论区](https://github.com/badhope/HermesAgent/discussions)
 - 🔌 [HermesClaw](https://github.com/AaronWong1999/hermesclaw) — 社区微信桥接：在同一微信账号上运行 Hermes Agent 和 OpenClaw。
 
 ---
@@ -199,4 +198,4 @@ python -m pytest tests/ -q
 
 MIT — 详见 [LICENSE](LICENSE)。
 
-由 [Nous Research](https://nousresearch.com) 构建。
+由 [badhope](https://github.com/badhope) 维护；最初由 [Nous Research](https://github.com/NousResearch) 团队设计。
