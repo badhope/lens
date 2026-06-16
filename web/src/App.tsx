@@ -7,14 +7,11 @@ import {
   type ComponentType,
   type ReactNode,
 } from "react";
-import { createPortal } from "react-dom";
 import {
   Routes,
   Route,
-  NavLink,
   Navigate,
   useLocation,
-  useNavigate,
 } from "react-router-dom";
 import {
   Activity,
@@ -24,7 +21,6 @@ import {
   Code,
   Cpu,
   Database,
-  Download,
   Eye,
   FolderOpen,
   FileText,
@@ -39,7 +35,6 @@ import {
   Plug,
   Puzzle,
   Radio,
-  RotateCw,
   Settings,
   Shield,
   ShieldCheck,
@@ -57,9 +52,11 @@ import { SelectionSwitcher } from "@nous-research/ui/ui/components/selection-swi
 import { Spinner } from "@nous-research/ui/ui/components/spinner";
 import { Typography } from "@nous-research/ui/ui/components/typography/index";
 import { cn } from "@/lib/utils";
+import { SidebarNavLink, type NavItem } from "@/components/SidebarNavLink";
+import { SidebarIconWithTooltip } from "@/components/SidebarIconWithTooltip";
+import { SidebarSystemActions } from "@/components/SidebarSystemActions";
 import { Backdrop } from "@/components/Backdrop";
 import { SidebarFooter } from "@/components/SidebarFooter";
-import { SidebarStatusStrip, gatewayLine } from "@/components/SidebarStatusStrip";
 import { useBelowBreakpoint } from "@nous-research/ui/hooks/use-below-breakpoint";
 import { useSidebarStatus } from "@/hooks/useSidebarStatus";
 import { AuthWidget } from "@/components/AuthWidget";
@@ -68,8 +65,6 @@ import { ProfileProvider } from "@/contexts/ProfileProvider";
 import { useProfileScope } from "@/contexts/useProfileScope";
 import { ProfileSwitcher } from "@/components/ProfileSwitcher";
 import { ProfileScopeBanner } from "@/components/ProfileScopeBanner";
-import { useSystemActions } from "@/contexts/useSystemActions";
-import type { SystemAction } from "@/contexts/system-actions-context";
 import ConfigPage from "@/pages/ConfigPage";
 import DocsPage from "@/pages/DocsPage";
 import EnvPage from "@/pages/EnvPage";
@@ -92,13 +87,11 @@ import ChatPage from "@/pages/ChatPage";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { useI18n } from "@/i18n";
-import type { Translations } from "@/i18n/types";
 import { PluginPage, PluginSlot, usePlugins } from "@/plugins";
 import type { PluginManifest } from "@/plugins";
 import { useTheme } from "@/themes";
 import { isDashboardEmbeddedChatEnabled } from "@/lib/dashboard-flags";
 import { api } from "@/lib/api";
-import type { StatusResponse } from "@/lib/api";
 
 function RootRedirect() {
   return <Navigate to="/sessions" replace />;
@@ -370,7 +363,7 @@ export default function App() {
   }, []);
   const isMobile = useBelowBreakpoint(1024);
   const isDesktopCollapsed = collapsed && !isMobile;
-  const tooltipWarmRef = useRef(0);
+  const tooltipWarmRef = useRef<number>(0);
   const sidebarStatus = useSidebarStatus();
   const isDocsRoute = pathname === "/docs" || pathname === "/docs/";
   const normalizedPath = pathname.replace(/\/$/, "") || "/";
@@ -506,11 +499,21 @@ export default function App() {
           <Menu />
         </Button>
 
-        <Typography
-          className="paper-brand text-[1.05rem] text-foreground"
-        >
-          {t.app.brand}
-        </Typography>
+        <div className="flex flex-col leading-none">
+          <span className="sr-only">Hermes Agent dashboard</span>
+          <Typography
+            aria-hidden
+            className="paper-brand text-[1.05rem] text-foreground"
+          >
+            Hermes
+          </Typography>
+          <span
+            aria-hidden
+            className="paper-eyebrow mt-0.5 text-[0.6875rem] tracking-[0.18em] text-muted-foreground"
+          >
+            Agent
+          </span>
+        </div>
       </header>
 
       {mobileOpen && (
@@ -797,422 +800,4 @@ export default function App() {
 function ProfileKeyedRoutes({ children }: { children: ReactNode }) {
   const { profile } = useProfileScope();
   return <div key={profile || "__own__"} className="contents">{children}</div>;
-}
-
-function SidebarNavLink({
-  closeMobile,
-  collapsed,
-  item,
-  tooltipWarmRef,
-  t,
-}: SidebarNavLinkProps) {
-  const { path, label, labelKey, icon: Icon } = item;
-  const liRef = useRef<HTMLLIElement>(null);
-  const [hovered, setHovered] = useState(false);
-
-  const navLabel = labelKey
-    ? ((t.app.nav as Record<string, string>)[labelKey] ?? label)
-    : label;
-
-  return (
-    <li
-      ref={liRef}
-      onMouseEnter={collapsed ? () => setHovered(true) : undefined}
-      onMouseLeave={collapsed ? () => setHovered(false) : undefined}
-    >
-      <NavLink
-        to={path}
-        end={path === "/sessions"}
-        onClick={closeMobile}
-        aria-label={collapsed ? navLabel : undefined}
-        onFocus={collapsed ? () => setHovered(true) : undefined}
-        onBlur={collapsed ? () => setHovered(false) : undefined}
-        className={({ isActive }) =>
-          cn(
-            "group/nav relative flex items-center gap-2.5",
-            "px-5 py-2",
-            "text-sm",
-            "whitespace-nowrap transition-colors cursor-pointer",
-            "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-            isActive
-              ? "text-foreground font-medium paper-nav-active"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted/40",
-          )
-        }
-      >
-        {({ isActive }) => (
-          <>
-            <Icon className={cn(
-              "h-4 w-4 shrink-0",
-              isActive ? "text-foreground" : "text-muted-foreground",
-            )} />
-
-            <span
-              className={cn(
-                "truncate transition-opacity duration-200",
-                collapsed ? "lg:opacity-0" : "lg:opacity-100",
-              )}
-            >
-              {navLabel}
-            </span>
-
-            {isActive && (
-              <span
-                aria-hidden
-                className="absolute right-3 text-[0.65rem] font-mono text-muted-foreground/70"
-              >
-                →
-              </span>
-            )}
-          </>
-        )}
-      </NavLink>
-
-      {collapsed && hovered && liRef.current && (
-        <SidebarTooltip anchor={liRef.current} label={navLabel} warmRef={tooltipWarmRef} />
-      )}
-    </li>
-  );
-}
-
-function SidebarSystemActions({
-  collapsed,
-  onNavigate,
-  status,
-  tooltipWarmRef,
-}: SidebarSystemActionsProps) {
-  const { t } = useI18n();
-  const navigate = useNavigate();
-  const { activeAction, isBusy, isRunning, pendingAction, runAction } =
-    useSystemActions();
-
-  const items: SystemActionItem[] = [
-    {
-      action: "restart",
-      icon: RotateCw,
-      label: t.status.restartGateway,
-      runningLabel: t.status.restartingGateway,
-      spin: true,
-    },
-    {
-      action: "update",
-      icon: Download,
-      label: t.status.updateHermes,
-      runningLabel: t.status.updatingHermes,
-      spin: false,
-    },
-  ];
-
-  const handleClick = (action: SystemAction) => {
-    if (isBusy) return;
-    void runAction(action);
-    navigate("/sessions");
-    onNavigate();
-  };
-
-  return (
-    <div
-      className={cn(
-        "shrink-0 flex flex-col",
-        "border-t border-current/10",
-        "py-1",
-      )}
-    >
-      <span
-        className={cn(
-          "px-5 pt-0.5 pb-0.5",
-          "font-mondwest text-display text-xs tracking-[0.12em] text-text-tertiary",
-          collapsed && "lg:hidden",
-        )}
-      >
-        {t.app.system}
-      </span>
-
-      <div className={cn(collapsed && "lg:hidden")}>
-        <SidebarStatusStrip status={status} />
-      </div>
-
-      <GatewayDot collapsed={collapsed} status={status} tooltipWarmRef={tooltipWarmRef} />
-
-      <ul className="flex flex-col">
-        {items.map((item) => (
-          <SystemActionButton
-            key={item.action}
-            collapsed={collapsed}
-            disabled={isBusy && !(pendingAction === item.action || (activeAction === item.action && isRunning))}
-            tooltipWarmRef={tooltipWarmRef}
-            isPending={pendingAction === item.action}
-            isRunning={activeAction === item.action && isRunning && pendingAction !== item.action}
-            item={item}
-            onClick={() => handleClick(item.action)}
-          />
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function SystemActionButton({
-  collapsed,
-  disabled,
-  isPending,
-  isRunning: isActionRunning,
-  item,
-  onClick,
-  tooltipWarmRef,
-}: SystemActionButtonProps) {
-  const { icon: Icon, label, runningLabel, spin } = item;
-  const liRef = useRef<HTMLLIElement>(null);
-  const [hovered, setHovered] = useState(false);
-  const busy = isPending || isActionRunning;
-  const displayLabel = isActionRunning ? runningLabel : label;
-
-  return (
-    <li
-      ref={liRef}
-      onMouseEnter={collapsed ? () => setHovered(true) : undefined}
-      onMouseLeave={collapsed ? () => setHovered(false) : undefined}
-    >
-      <button
-        onClick={onClick}
-        disabled={disabled}
-        aria-busy={busy}
-        aria-label={collapsed ? displayLabel : undefined}
-        onFocus={collapsed ? () => setHovered(true) : undefined}
-        onBlur={collapsed ? () => setHovered(false) : undefined}
-        type="button"
-        className={cn(
-          "group/action relative flex w-full items-center gap-3",
-          "px-5 py-2.5",
-          "font-mondwest text-display text-xs tracking-[0.1em]",
-          "whitespace-nowrap transition-colors cursor-pointer",
-          "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-midground",
-          busy
-            ? "text-midground"
-            : "text-text-secondary hover:text-midground",
-          "disabled:text-text-disabled disabled:cursor-not-allowed",
-        )}
-      >
-        {isPending ? (
-          <Spinner className="shrink-0 text-[0.875rem]" />
-        ) : isActionRunning && spin ? (
-          <Spinner className="shrink-0 text-[0.875rem]" />
-        ) : (
-          <Icon
-            className={cn(
-              "h-3.5 w-3.5 shrink-0",
-              isActionRunning && !spin && "animate-pulse",
-            )}
-          />
-        )}
-
-        <span className={cn(
-          "truncate transition-opacity duration-300",
-          collapsed ? "lg:opacity-0" : "lg:opacity-100",
-        )}>
-          {displayLabel}
-        </span>
-
-        <span
-          aria-hidden
-          className="absolute inset-y-0.5 left-1.5 right-1.5 bg-midground opacity-0 pointer-events-none transition-opacity duration-200 group-hover/action:opacity-5"
-        />
-
-        {busy && (
-          <span
-            aria-hidden
-            className="absolute left-0 top-0 bottom-0 w-px bg-midground"
-            style={{ mixBlendMode: "plus-lighter" }}
-          />
-        )}
-      </button>
-
-      {collapsed && hovered && liRef.current && (
-        <SidebarTooltip anchor={liRef.current} label={displayLabel} warmRef={tooltipWarmRef} />
-      )}
-    </li>
-  );
-}
-
-function SidebarIconWithTooltip({
-  children,
-  collapsed,
-  label,
-  tooltipWarmRef,
-}: SidebarIconWithTooltipProps) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [hovered, setHovered] = useState(false);
-
-  return (
-    <div
-      ref={ref}
-      className={cn(
-        "relative w-fit",
-        collapsed && "group/icon",
-      )}
-      onMouseEnter={collapsed ? () => setHovered(true) : undefined}
-      onMouseLeave={collapsed ? () => setHovered(false) : undefined}
-    >
-      {children}
-
-      {collapsed && (
-        <span
-          aria-hidden
-          className="absolute inset-y-0 inset-x-[-0.375rem] bg-midground opacity-0 pointer-events-none transition-opacity duration-200 group-hover/icon:opacity-5 hidden lg:block"
-        />
-      )}
-
-      {collapsed && hovered && ref.current && (
-        <SidebarTooltip anchor={ref.current} label={label} warmRef={tooltipWarmRef} />
-      )}
-    </div>
-  );
-}
-
-function GatewayDot({ collapsed, status, tooltipWarmRef }: GatewayDotProps) {
-  const { t } = useI18n();
-  const ref = useRef<HTMLDivElement>(null);
-  const [hovered, setHovered] = useState(false);
-
-  const toneToColor: Record<string, string> = {
-    "text-success": "bg-success",
-    "text-warning": "bg-warning",
-    "text-destructive": "bg-destructive",
-    "text-muted-foreground": "bg-muted-foreground",
-  };
-
-  let color: string;
-  let label: string;
-
-  if (!status) {
-    color = "bg-midground/20";
-    label = t.status.gateway;
-  } else {
-    const gw = gatewayLine(status, t);
-    color = toneToColor[gw.tone] ?? "bg-muted-foreground";
-    label = `${t.status.gateway} ${gw.label}`;
-  }
-
-  return (
-    <div
-      ref={ref}
-      className={cn(
-        "hidden lg:flex py-3 pl-[1.625rem] transition-opacity duration-300",
-        collapsed ? "lg:opacity-100" : "lg:opacity-0 lg:h-0 lg:py-0 lg:overflow-hidden",
-      )}
-      role="status"
-      aria-label={label}
-      tabIndex={collapsed ? 0 : -1}
-      onMouseEnter={collapsed ? () => setHovered(true) : undefined}
-      onMouseLeave={collapsed ? () => setHovered(false) : undefined}
-      onFocus={collapsed ? () => setHovered(true) : undefined}
-      onBlur={collapsed ? () => setHovered(false) : undefined}
-    >
-      <span
-        aria-hidden
-        className={cn("h-1.5 w-1.5 rounded-full", color)}
-      />
-
-      {hovered && ref.current && (
-        <SidebarTooltip anchor={ref.current} label={label} warmRef={tooltipWarmRef} />
-      )}
-    </div>
-  );
-}
-
-function SidebarTooltip({ anchor, label, warmRef }: SidebarTooltipProps) {
-  const rect = anchor.getBoundingClientRect();
-  const sidebar = document.getElementById("app-sidebar");
-  const sidebarRight = sidebar?.getBoundingClientRect().right ?? rect.right;
-
-  const isWarm = warmRef ? Date.now() - warmRef.current < 300 : false;
-
-  useEffect(() => {
-    if (warmRef) warmRef.current = Date.now();
-    return () => {
-      if (warmRef) warmRef.current = Date.now();
-    };
-  }, [warmRef]);
-
-  return createPortal(
-    <span
-      className={cn(
-        "fixed z-[100] pointer-events-none",
-        "px-2 py-1",
-        "bg-background-base/95 border border-current/20 backdrop-blur-sm shadow-lg",
-        "font-mondwest text-display text-xs tracking-[0.1em] text-midground uppercase",
-      )}
-      style={{
-        top: rect.top + rect.height / 2,
-        left: sidebarRight + 8,
-        transform: "translateY(-50%)",
-        opacity: isWarm ? 1 : undefined,
-        animation: isWarm ? "none" : "sidebar-tooltip-in 120ms ease-out",
-      }}
-    >
-      {label}
-    </span>,
-    document.body,
-  );
-}
-
-type TooltipWarmRef = React.RefObject<number>;
-
-interface GatewayDotProps {
-  collapsed: boolean;
-  status: StatusResponse | null;
-  tooltipWarmRef: TooltipWarmRef;
-}
-
-interface NavItem {
-  icon: ComponentType<{ className?: string }>;
-  label: string;
-  labelKey?: string;
-  path: string;
-}
-
-interface SidebarIconWithTooltipProps {
-  children: ReactNode;
-  collapsed: boolean;
-  label: string;
-  tooltipWarmRef: TooltipWarmRef;
-}
-
-interface SidebarNavLinkProps {
-  closeMobile: () => void;
-  collapsed: boolean;
-  item: NavItem;
-  t: Translations;
-  tooltipWarmRef: TooltipWarmRef;
-}
-
-interface SidebarSystemActionsProps {
-  collapsed: boolean;
-  onNavigate: () => void;
-  status: StatusResponse | null;
-  tooltipWarmRef: TooltipWarmRef;
-}
-
-interface SidebarTooltipProps {
-  anchor: HTMLElement;
-  label: string;
-  warmRef?: TooltipWarmRef;
-}
-
-interface SystemActionButtonProps {
-  collapsed: boolean;
-  disabled: boolean;
-  isPending: boolean;
-  isRunning: boolean;
-  item: SystemActionItem;
-  onClick: () => void;
-  tooltipWarmRef: TooltipWarmRef;
-}
-
-interface SystemActionItem {
-  action: SystemAction;
-  icon: ComponentType<{ className?: string }>;
-  label: string;
-  runningLabel: string;
-  spin: boolean;
 }

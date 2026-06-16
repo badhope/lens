@@ -7,6 +7,7 @@ import { PluginSlot } from "@/plugins";
 
 export const HERMES_DOCS_URL = "https://github.com/badhope/HermesAgent#readme";
 const HERMES_REPO_URL = "https://github.com/badhope/HermesAgent";
+const HERMES_REPO_NAME = "badhope/HermesAgent";
 
 /** How long to wait before assuming the iframe won't load (ms). */
 const IFRAME_LOAD_TIMEOUT = 8000;
@@ -128,7 +129,7 @@ export default function DocsPage() {
               )}
             >
               <Github className="size-3.5" />
-              badhope/HermesAgent
+              {HERMES_REPO_NAME}
               <ExternalLink className="size-3 text-muted-foreground" />
             </a>
           </div>

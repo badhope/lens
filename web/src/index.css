@@ -508,12 +508,6 @@ aside[data-collapsed="true"] .paper-nav-active::before {
   display: none;
 }
 
-/* Plus-lighter blend — kept available for any pre-existing caller, but
-   in the paper theme it has no visible effect. */
-.blend-lighter {
-  mix-blend-mode: plus-lighter;
-}
-
 /* Mono stack for dense data readouts. */
 .font-mono-ui {
   font-family: var(--theme-font-mono);
