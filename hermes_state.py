@@ -1511,6 +1511,19 @@ class SessionDB:
             )
         self._execute_write(_do)
 
+    def update_session_activity(self, session_id: str) -> None:
+        """Update the last_active timestamp for a session.
+        
+        This is called after each message exchange to keep the session
+        list sorted by most recent activity.
+        """
+        def _do(conn):
+            conn.execute(
+                "UPDATE sessions SET last_active = ? WHERE id = ?",
+                (time.time(), session_id),
+            )
+        self._execute_write(_do)
+
     def update_token_counts(
         self,
         session_id: str,

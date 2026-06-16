@@ -342,6 +342,30 @@ export const api = {
       window.location.assign("/login");
       return r;
     }),
+  
+  // ── Chat API endpoints ──────────────────────────────────────────────
+  getChatSessions: (limit = 20, offset = 0) =>
+    fetchJSON<{ sessions: any[]; total: number; limit: number; offset: number }>(
+      `/api/chat/sessions?limit=${limit}&offset=${offset}`,
+    ),
+  getChatSessionMessages: (sessionId: string) =>
+    fetchJSON<{ session_id: string; messages: any[] }>(
+      `/api/chat/sessions/${encodeURIComponent(sessionId)}/messages`,
+    ),
+  createChatSession: (title?: string) =>
+    fetchJSON<{ session_id: string; title: string }>("/api/chat/sessions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title }),
+    }),
+  deleteChatSession: (sessionId: string) =>
+    fetchJSON<{ ok: boolean; session_id: string }>(
+      `/api/chat/sessions/${encodeURIComponent(sessionId)}`,
+      {
+        method: "DELETE",
+      },
+    ),
+  
   getSessions: (limit = 20, offset = 0, profile = getManagementProfile()) =>
     fetchJSON<PaginatedSessions>(
       appendProfileParam(`/api/sessions?limit=${limit}&offset=${offset}`, profile),

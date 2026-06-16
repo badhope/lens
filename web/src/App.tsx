@@ -84,7 +84,7 @@ import PairingPage from "@/pages/PairingPage";
 import ChannelsPage from "@/pages/ChannelsPage";
 import WebhooksPage from "@/pages/WebhooksPage";
 import SystemPage from "@/pages/SystemPage";
-import ChatPage from "@/pages/ChatPage";
+import { ChatDialog } from "@/components/ChatDialog";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { useI18n } from "@/i18n";
@@ -775,7 +775,7 @@ export default function App() {
                       )}
                       aria-hidden={!isChatRoute}
                     >
-                      <ChatPage isActive={isChatRoute} />
+                      <ChatDialog />
                     </div>
                   ))}
               </div>

@@ -11758,6 +11758,331 @@ def _maybe_open_browser(
     threading.Thread(target=_open, daemon=True).start()
 
 
+# ---------------------------------------------------------------------------
+# Chat API endpoints for the new dialog-style interface
+# ---------------------------------------------------------------------------
+
+class ChatMessageRequest(BaseModel):
+    """Request model for sending a chat message."""
+    session_id: Optional[str] = None
+    message: str
+    mode: str = "simple"  # "simple" or "advanced"
+    stream: bool = True
+
+
+class ChatSessionCreate(BaseModel):
+    """Request model for creating a new chat session."""
+    title: Optional[str] = None
+
+
+@app.post("/api/chat/send")
+async def send_chat_message(request: ChatMessageRequest, req: Request):
+    """Send a chat message and get a response (supports streaming).
+
+    This endpoint provides a GPT-like chat experience with:
+    - Streaming responses (SSE)
+    - Conversation history
+    - Simple/Advanced mode switching
+    """
+    # Verify session token
+    token = req.headers.get(_SESSION_HEADER_NAME)
+    if not _verify_session_token(token):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    try:
+        from hermes_state import SessionDB
+        from run_agent import AIAgent
+        import uuid
+        import time
+
+        # Create or get session up-front so the session_id is known before
+        # streaming begins.  The DB handle used here is closed immediately
+        # after the setup phase; the streaming phase opens its own handle
+        # so the connection lifetime does not span the (potentially long)
+        # SSE generation.
+        setup_db = SessionDB()
+        try:
+            session_id = request.session_id
+            if not session_id:
+                session_id = str(uuid.uuid4())
+                title = request.message[:50] if len(request.message) > 50 else request.message
+                setup_db.create_session(
+                    session_id=session_id,
+                    source="dashboard_chat",
+                    title=title,
+                )
+
+            # Save user message
+            setup_db.append_message(
+                session_id=session_id,
+                role="user",
+                content=request.message,
+            )
+
+            # Snapshot conversation history (exclude the message we just added)
+            history = setup_db.get_messages_as_conversation(session_id)
+        finally:
+            setup_db.close()
+
+        if request.stream:
+            # Streaming response using Server-Sent Events.
+            #
+            # AIAgent.run_conversation() is a *synchronous*, potentially
+            # long-running call.  Running it directly inside an async
+            # generator would block the event loop for the whole turn.
+            # Instead we offload it to a worker thread and bridge the
+            # synchronous stream_callback into the async SSE stream via an
+            # asyncio.Queue.
+            from fastapi.responses import StreamingResponse
+
+            loop = asyncio.get_event_loop()
+            # Sentinel placed on the queue when the worker finishes.
+            _DONE = object()
+
+            async def generate_stream():
+                queue: asyncio.Queue = asyncio.Queue()
+
+                def stream_callback(text):
+                    # Called from the worker thread; thread-safe enqueue.
+                    try:
+                        loop.call_soon_threadsafe(
+                            queue.put_nowait,
+                            ("delta", text),
+                        )
+                    except Exception:
+                        # Swallow callback errors so a failing UI bridge
+                        # never crashes the agent turn.
+                        pass
+
+                def _worker():
+                    try:
+                        agent = AIAgent()
+                        response = agent.run_conversation(
+                            user_message=request.message,
+                            conversation_history=history[:-1],
+                            stream_callback=stream_callback,
+                        )
+                        final_text = response.get("final_response", "")
+                        loop.call_soon_threadsafe(
+                            queue.put_nowait, ("complete", final_text)
+                        )
+
+                        # Persist the assistant message in the worker thread
+                        # so the SSE stream is not held open by DB I/O.
+                        try:
+                            persist_db = SessionDB()
+                            try:
+                                persist_db.append_message(
+                                    session_id=session_id,
+                                    role="assistant",
+                                    content=final_text,
+                                )
+                                persist_db.update_session_activity(session_id)
+                            finally:
+                                persist_db.close()
+                        except Exception as persist_err:
+                            _log.warning(
+                                "Failed to persist assistant message: %s",
+                                persist_err,
+                            )
+                    except Exception as e:
+                        _log.error("Chat worker error: %s", e, exc_info=True)
+                        loop.call_soon_threadsafe(
+                            queue.put_nowait, ("error", str(e))
+                        )
+                    finally:
+                        loop.call_soon_threadsafe(queue.put_nowait, _DONE)
+
+                # Launch the worker in a thread pool so it does not block
+                # the event loop.
+                import threading
+                thread = threading.Thread(target=_worker, daemon=True)
+                thread.start()
+
+                # Send session_id first so the client can associate the
+                # stream with a session before any deltas arrive.
+                yield f"data: {json.dumps({'type': 'session_id', 'session_id': session_id})}\n\n"
+
+                try:
+                    while True:
+                        item = await queue.get()
+                        if item is _DONE:
+                            break
+                        kind, payload = item
+                        if kind == "delta":
+                            yield f"data: {json.dumps({'type': 'delta', 'content': payload})}\n\n"
+                        elif kind == "complete":
+                            yield f"data: {json.dumps({'type': 'complete', 'content': payload})}\n\n"
+                        elif kind == "error":
+                            yield f"data: {json.dumps({'type': 'error', 'content': payload})}\n\n"
+                finally:
+                    # Ensure the worker thread is not left dangling if the
+                    # client disconnects mid-stream.
+                    if thread.is_alive():
+                        thread.join(timeout=1.0)
+
+                yield "data: [DONE]\n\n"
+
+            return StreamingResponse(
+                generate_stream(),
+                media_type="text/event-stream",
+                headers={
+                    "Cache-Control": "no-cache",
+                    "Connection": "keep-alive",
+                    "X-Accel-Buffering": "no",  # Disable nginx buffering
+                },
+            )
+        else:
+            # Non-streaming response
+            agent = AIAgent()
+            response = agent.run_conversation(
+                user_message=request.message,
+                conversation_history=history[:-1],
+            )
+
+            final_text = response.get("final_response", "")
+
+            # Save assistant message
+            persist_db = SessionDB()
+            try:
+                persist_db.append_message(
+                    session_id=session_id,
+                    role="assistant",
+                    content=final_text,
+                )
+                persist_db.update_session_activity(session_id)
+            finally:
+                persist_db.close()
+
+            return {
+                "session_id": session_id,
+                "response": final_text,
+            }
+
+    except Exception as e:
+        _log.error("Chat send error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/chat/sessions")
+async def list_chat_sessions(req: Request, limit: int = 20, offset: int = 0):
+    """List chat sessions for the dashboard chat interface."""
+    token = req.headers.get(_SESSION_HEADER_NAME)
+    if not _verify_session_token(token):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    try:
+        from hermes_state import SessionDB
+        db = SessionDB()
+        
+        try:
+            sessions = db.list_sessions_rich(limit=limit, offset=offset)
+            
+            # Filter for dashboard chat sessions
+            chat_sessions = [
+                s for s in sessions
+                if s.get("source") == "dashboard_chat"
+            ]
+            
+            return {
+                "sessions": chat_sessions,
+                "total": len(chat_sessions),
+                "limit": limit,
+                "offset": offset,
+            }
+        finally:
+            db.close()
+    
+    except Exception as e:
+        _log.error("List sessions error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/chat/sessions/{session_id}/messages")
+async def get_chat_session_messages(session_id: str, req: Request):
+    """Get all messages for a specific chat session."""
+    token = req.headers.get(_SESSION_HEADER_NAME)
+    if not _verify_session_token(token):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    try:
+        from hermes_state import SessionDB
+        db = SessionDB()
+        
+        try:
+            messages = db.get_messages(session_id)
+            
+            return {
+                "session_id": session_id,
+                "messages": messages,
+            }
+        finally:
+            db.close()
+    
+    except Exception as e:
+        _log.error("Get messages error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/chat/sessions/{session_id}")
+async def delete_chat_session(session_id: str, req: Request):
+    """Delete a chat session and all its messages."""
+    token = req.headers.get(_SESSION_HEADER_NAME)
+    if not _verify_session_token(token):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    try:
+        from hermes_state import SessionDB
+        db = SessionDB()
+        
+        try:
+            # Delete the session (cascades to messages)
+            db.delete_session(session_id)
+            
+            return {"ok": True, "session_id": session_id}
+        finally:
+            db.close()
+    
+    except Exception as e:
+        _log.error("Delete session error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/chat/sessions")
+async def create_chat_session(request: ChatSessionCreate, req: Request):
+    """Create a new chat session."""
+    token = req.headers.get(_SESSION_HEADER_NAME)
+    if not _verify_session_token(token):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    try:
+        from hermes_state import SessionDB
+        import uuid
+        
+        db = SessionDB()
+        
+        try:
+            session_id = str(uuid.uuid4())
+            title = request.title or "New Chat"
+            
+            db.create_session(
+                session_id=session_id,
+                source="dashboard_chat",
+                title=title,
+            )
+            
+            return {
+                "session_id": session_id,
+                "title": title,
+            }
+        finally:
+            db.close()
+    
+    except Exception as e:
+        _log.error("Create session error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 def start_server(
     host: str = "127.0.0.1",
     port: int = 9119,
