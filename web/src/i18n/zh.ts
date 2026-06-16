@@ -43,6 +43,9 @@ export const zh: Translations = {
     expand: "展开",
     general: "通用",
     messaging: "消息平台",
+    gateway: "网关",
+    gatewayHint:
+      "消息平台、API 服务器与 Webhook 在「频道」页面配置。这些是网关级设置（代理/中继模式与全局白名单）。",
     pluginLoadFailed:
       "无法加载此插件的脚本。请检查网络请求（dashboard-plugins/…）以及服务器上的插件路径。",
     pluginNotRegistered: "插件脚本未调用 register()，或执行出错。请打开浏览器控制台查看详情。",

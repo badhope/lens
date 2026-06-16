@@ -513,20 +513,6 @@ aside[data-collapsed="true"] .paper-nav-active::before {
   font-family: var(--theme-font-mono);
 }
 
-/* Subtle grain overlay for badges. */
-.grain {
-  position: relative;
-}
-.grain::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  opacity: 0.12;
-  pointer-events: none;
-  background: repeating-conic-gradient(currentColor 0% 25%, #0000 0% 50%) 0 0 /
-    2px 2px;
-}
-
 /* When a theme provides `assets.bg`, the backdrop's <div> renders it as
    a CSS background; the default filler <img> is hidden to prevent
    double-compositing. In paper mode there's no filler image at all, but

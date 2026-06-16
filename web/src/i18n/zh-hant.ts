@@ -43,6 +43,9 @@ export const zhHant: Translations = {
     expand: "展開",
     general: "一般",
     messaging: "訊息平台",
+    gateway: "閘道",
+    gatewayHint:
+      "訊息平台、API 伺服器與 Webhook 在「頻道」頁面設定。這些是閘道層級設定（代理/中繼模式與全域白名單）。",
     pluginLoadFailed:
       "無法載入此外掛的指令碼。請檢查網路請求（dashboard-plugins/…）以及伺服器上的外掛路徑。",
     pluginNotRegistered:
