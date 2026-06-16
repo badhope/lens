@@ -258,7 +258,9 @@ small { font-size: 1.0625rem; }
   overflow: hidden;
 }
 
-@media (max-width: 768px) {
+/* 1024px (lg) 断点与 React 的 useBelowBreakpoint(1024) 保持一致。
+   移动端允许页面滚动，避免 fixed 布局在小屏上溢出。 */
+@media (max-width: 1024px) {
   html,
   body,
   #root {

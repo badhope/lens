@@ -279,7 +279,7 @@ export default function ChannelsPage() {
           <div
             className={cn(
               themedBody,
-              "relative w-full max-w-lg border border-border bg-card shadow-2xl flex flex-col max-h-[90vh]",
+              "relative w-full max-w-lg border border-border bg-card shadow-2xl flex flex-col max-h-[90dvh] sm:max-h-[90vh]",
             )}
           >
             <Button

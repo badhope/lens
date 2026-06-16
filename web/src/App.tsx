@@ -485,6 +485,7 @@ export default function App() {
         className={cn(
           "lg:hidden fixed top-0 left-0 right-0 z-40 min-h-14",
           "flex items-center gap-2 px-4 py-2",
+          "pt-[calc(0.5rem+env(safe-area-inset-top,0px))]",
           "border-b border-border bg-background",
         )}
       >
@@ -552,13 +553,15 @@ export default function App() {
               className={cn(
                 "flex h-14 shrink-0 items-center gap-2",
                 "border-b border-border",
+                "transition-[padding] duration-200 ease-out",
                 collapsed ? "lg:justify-center lg:px-0" : "px-4 justify-between",
               )}
             >
               <div
                 className={cn(
                   "flex items-center gap-2",
-                  collapsed && "lg:hidden",
+                  "transition-opacity duration-150",
+                  collapsed ? "lg:hidden lg:opacity-0" : "lg:opacity-100",
                 )}
               >
                 <PluginSlot name="header-left" />
@@ -610,7 +613,7 @@ export default function App() {
             <ProfileSwitcher collapsed={isDesktopCollapsed} />
 
             <nav
-              className="min-h-0 w-full flex-1 overflow-y-auto overflow-x-hidden border-t border-border py-2"
+              className="min-h-0 w-full flex-1 overflow-y-auto overflow-x-hidden border-t border-border py-2 scroll-smooth"
               aria-label={t.app.navigation}
             >
               <ul className="flex flex-col">
@@ -717,10 +720,10 @@ export default function App() {
             <div
               className={cn(
                 "relative z-2 flex min-w-0 min-h-0 flex-1 flex-col",
-                "px-3 sm:px-6",
+                "px-3 sm:px-4 lg:px-6",
                 isChatRoute
                   ? "pb-0 pt-1 sm:pt-2 lg:pt-4"
-                  : "pt-2 sm:pt-4 lg:pt-6",
+                  : "pt-2 sm:pt-3 lg:pt-6",
                 isDocsRoute && "min-h-0 flex-1",
               )}
             >
