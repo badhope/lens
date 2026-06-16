@@ -90,6 +90,11 @@ export const ko: Translations = {
     statusOverview: "상태 개요",
     system: "시스템",
     webUi: "Web UI",
+    docsFallback: {
+      title: "Documentation",
+      description:
+        "The in-dashboard docs viewer couldn't reach the upstream site. Browse the full documentation on GitHub instead.",
+    },
   },
 
   status: {

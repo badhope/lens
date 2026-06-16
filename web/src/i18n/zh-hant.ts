@@ -90,6 +90,11 @@ export const zhHant: Translations = {
     statusOverview: "狀態總覽",
     system: "系統",
     webUi: "管理面板",
+    docsFallback: {
+      title: "文件",
+      description:
+        "內嵌文件檢視器無法連線至上游站點。請在 GitHub 上瀏覽完整文件。",
+    },
   },
 
   status: {

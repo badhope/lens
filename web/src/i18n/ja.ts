@@ -90,6 +90,11 @@ export const ja: Translations = {
     statusOverview: "ステータス概要",
     system: "システム",
     webUi: "Web UI",
+    docsFallback: {
+      title: "Documentation",
+      description:
+        "The in-dashboard docs viewer couldn't reach the upstream site. Browse the full documentation on GitHub instead.",
+    },
   },
 
   status: {

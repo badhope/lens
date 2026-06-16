@@ -560,14 +560,16 @@ export default function App() {
                 <PluginSlot name="header-left" />
 
                 <div className="flex flex-col leading-none">
+                  <span className="sr-only">Hermes Agent dashboard</span>
                   <Typography
+                    aria-hidden
                     className="paper-brand text-[1.05rem] text-foreground"
                   >
                     Hermes
                   </Typography>
                   <span
                     aria-hidden
-                    className="paper-eyebrow mt-0.5 text-[0.5625rem] tracking-[0.18em] text-muted-foreground"
+                    className="paper-eyebrow mt-0.5 text-[0.6875rem] tracking-[0.18em] text-muted-foreground"
                   >
                     Agent
                   </span>

@@ -89,6 +89,11 @@ export const zh: Translations = {
     statusOverview: "状态概览",
     system: "系统",
     webUi: "管理面板",
+    docsFallback: {
+      title: "文档",
+      description:
+        "内嵌文档查看器无法连接到上游站点。请在 GitHub 上浏览完整文档。",
+    },
     managingProfile: "正在管理配置",
     currentProfileOption: "本管理面板（{name}）",
   },

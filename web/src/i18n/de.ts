@@ -90,6 +90,11 @@ export const de: Translations = {
     statusOverview: "Statusübersicht",
     system: "System",
     webUi: "Web UI",
+    docsFallback: {
+      title: "Documentation",
+      description:
+        "The in-dashboard docs viewer couldn't reach the upstream site. Browse the full documentation on GitHub instead.",
+    },
   },
 
   status: {

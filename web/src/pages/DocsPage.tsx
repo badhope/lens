@@ -1,5 +1,5 @@
-import { useLayoutEffect, useState } from "react";
-import { ExternalLink, BookOpen, Github } from "lucide-react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { ExternalLink, BookOpen, Github, RotateCw } from "lucide-react";
 import { useI18n } from "@/i18n";
 import { usePageHeader } from "@/contexts/usePageHeader";
 import { cn } from "@/lib/utils";
@@ -7,6 +7,9 @@ import { PluginSlot } from "@/plugins";
 
 export const HERMES_DOCS_URL = "https://github.com/badhope/HermesAgent#readme";
 const HERMES_REPO_URL = "https://github.com/badhope/HermesAgent";
+
+/** How long to wait before assuming the iframe won't load (ms). */
+const IFRAME_LOAD_TIMEOUT = 8000;
 
 const DS_BUTTON_OUTLINED_LINK_CN = cn(
   "group relative inline-grid grid-cols-[auto_1fr_auto] items-center",
@@ -19,7 +22,40 @@ const DS_BUTTON_OUTLINED_LINK_CN = cn(
 export default function DocsPage() {
   const { t } = useI18n();
   const { setEnd } = usePageHeader();
-  const [iframeFailed, setIframeFailed] = useState(false);
+  const [iframeState, setIframeState] = useState<"loading" | "loaded" | "failed">("loading");
+  const [retryKey, setRetryKey] = useState(0);
+  const loadedRef = useRef(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Detect iframe load: GitHub blocks `onError` cross-origin, so we use
+  // `onLoad` + a fail-open timeout.  If the iframe fires `onLoad` within
+  // IFRAME_LOAD_TIMEOUT ms we show it; otherwise we show the fallback card.
+  const handleIframeLoad = useCallback(() => {
+    loadedRef.current = true;
+    setIframeState("loaded");
+  }, []);
+
+  useEffect(() => {
+    loadedRef.current = false;
+    setIframeState("loading");
+
+    const id = setTimeout(() => {
+      if (!loadedRef.current) {
+        setIframeState("failed");
+      }
+    }, IFRAME_LOAD_TIMEOUT);
+    timerRef.current = id;
+
+    return () => {
+      clearTimeout(id);
+      timerRef.current = null;
+    };
+  }, [retryKey]);
+
+  const handleRetry = useCallback(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    setRetryKey((k) => k + 1);
+  }, []);
 
   useLayoutEffect(() => {
     setEnd(
@@ -47,7 +83,7 @@ export default function DocsPage() {
     >
       <PluginSlot name="docs:top" />
 
-      {iframeFailed ? (
+      {iframeState === "failed" ? (
         <div
           className={cn(
             "flex min-h-0 w-full min-w-0 flex-1 flex-col items-center justify-center",
@@ -58,35 +94,51 @@ export default function DocsPage() {
           <BookOpen className="size-10 text-muted-foreground" strokeWidth={1.25} />
           <div className="space-y-1.5">
             <h2 className="font-mono-ui text-sm tracking-wide text-foreground">
-              {t.app.nav.documentation}
+              {t.app.docsFallback.title}
             </h2>
             <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
-              The in-dashboard docs viewer couldn't reach the upstream site.
-              Browse the full documentation on GitHub instead.
+              {t.app.docsFallback.description}
             </p>
           </div>
-          <a
-            href={HERMES_REPO_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={cn(
-              "inline-flex items-center gap-2",
-              "px-3.5 py-2",
-              "border border-border bg-background",
-              "font-mono-ui text-xs tracking-wide text-foreground",
-              "transition-colors hover:border-foreground/40 hover:bg-muted/40",
-            )}
-          >
-            <Github className="size-3.5" />
-            badhope/HermesAgent
-            <ExternalLink className="size-3 text-muted-foreground" />
-          </a>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleRetry}
+              type="button"
+              className={cn(
+                "inline-flex items-center gap-2",
+                "px-3.5 py-2",
+                "border border-border bg-background",
+                "font-mono-ui text-xs tracking-wide text-foreground",
+                "transition-colors hover:border-foreground/40 hover:bg-muted/40",
+              )}
+            >
+              <RotateCw className="size-3" />
+              {t.common.retry}
+            </button>
+            <a
+              href={HERMES_REPO_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={cn(
+                "inline-flex items-center gap-2",
+                "px-3.5 py-2",
+                "border border-border bg-background",
+                "font-mono-ui text-xs tracking-wide text-foreground",
+                "transition-colors hover:border-foreground/40 hover:bg-muted/40",
+              )}
+            >
+              <Github className="size-3.5" />
+              badhope/HermesAgent
+              <ExternalLink className="size-3 text-muted-foreground" />
+            </a>
+          </div>
         </div>
       ) : (
         <iframe
+          key={retryKey}
           title={t.app.nav.documentation}
           src={HERMES_DOCS_URL}
-          onError={() => setIframeFailed(true)}
+          onLoad={handleIframeLoad}
           className={cn(
             "min-h-0 w-full min-w-0 flex-1",
             "rounded-sm border border-current/20",
@@ -96,6 +148,7 @@ export default function DocsPage() {
             // so the docs render cleanly regardless of the active
             // dashboard theme or the user's prefers-color-scheme.
             "[color-scheme:light] bg-white",
+            iframeState === "loading" && "hidden",
           )}
           sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
           referrerPolicy="no-referrer-when-downgrade"

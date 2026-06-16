@@ -90,6 +90,11 @@ export const hu: Translations = {
     statusOverview: "Állapot áttekintése",
     system: "Rendszer",
     webUi: "Web UI",
+    docsFallback: {
+      title: "Documentation",
+      description:
+        "The in-dashboard docs viewer couldn't reach the upstream site. Browse the full documentation on GitHub instead.",
+    },
   },
 
   status: {
